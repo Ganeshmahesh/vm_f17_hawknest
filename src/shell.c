@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <string.h>
 
@@ -10,6 +11,7 @@
 
 #include <mos6502/cpu.h>
 
+static uint16_t curr_brk;
 
 static int
 cmd_help (mos6502_t * cpu, char * cmd)
@@ -17,6 +19,8 @@ cmd_help (mos6502_t * cpu, char * cmd)
 	printf("List of commands:\n\n");
 	printf("s or stepi -- Step one instruction\n");
 	printf("sn or stepn -- Step N instructions\n");
+	printf("b or break <addr> -- Set a breakpoint at <addr> (currently only one breakpoint supported)\n");
+	printf("c or continue -- Continue until exit or breakpoint is hit\n");
 	printf("j or jump <addr> -- Set PC to specified adddress (in hex) and continue\n");
 	printf("r or regs -- Dump the machine registers\n");
 	printf("pk or peek <addr> -- Print the contents of memory at this address\n");
@@ -45,8 +49,11 @@ cmd_stepn (mos6502_t * cpu, char * cmd)
 	if (sscanf(cmd, "stepn %d", &n) == 1 ||
 	    sscanf(cmd, "sn %d", &n) == 1) {
 		
-		for (i = 0; i < n; i++) {
+		for (i = 0; i < n && cpu->pc != curr_brk; i++) {
 			mos6502_step(cpu);
+		}
+		if (cpu->pc == curr_brk) {
+			printf("Breakpoint [0x%04X] reached.\n", curr_brk);
 		}
 
 	} else {
@@ -165,12 +172,46 @@ cmd_print_instr (mos6502_t * cpu, char * cmd)
 }
 
 static int
+cmd_cont (mos6502_t * cpu, char * cmd)
+{
+	while (cpu->pc != curr_brk) {
+		if (mos6502_step(cpu) < 0) {
+			return -1;
+		}
+	}
+
+	if (cpu->pc == curr_brk) {
+		printf("Breakpoint [0x%04X] reached.\n", curr_brk);
+	}
+	
+	return 0;
+}
+
+static int
+cmd_brk (mos6502_t * cpu, char * cmd)
+{
+	uint16_t addr = 0;
+
+	if (sscanf(cmd, "break %hx", &addr) == 1 ||
+	    sscanf(cmd, "b %hx", &addr) == 1) {
+		curr_brk = addr;
+		printf("Breakpoint set at [0x%04X]\n", addr);
+	} else {
+		printf("Invalid command format.\n");
+		cmd_help(cpu, cmd);
+	}
+
+	return 0;
+}
+
+static int
 cmd_quit (mos6502_t * cpu, char * cmd)
 {
 	printf("Quitting. Goodbye.\n");
 	exit(0);
 	return 0;
 }
+
 
 
 #define CMP(x, n) (strncmp(cmd, x, n) == 0)
@@ -204,6 +245,10 @@ handle_cmd (mos6502_t * cpu, char * cmd)
 		return cmd_nmi(cpu, cmd);
 	} else if (CMP("pr", 2)) {
 		return cmd_print_instr(cpu, cmd);
+	} else if (CMP("b ", 2) || CMP("break", 5)) {
+		return cmd_brk(cpu, cmd);
+	} else if (ONECHAR('c') || CMP("continue", 8)) {
+		return cmd_cont(cpu, cmd);
 	} else {
 		printf("Undefined command: \"%s\". Try \"help\".\n", strtok(cmd, "\n"));
 		
