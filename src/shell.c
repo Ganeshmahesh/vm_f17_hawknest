@@ -11,7 +11,103 @@
 
 #include <mos6502/cpu.h>
 
-static uint16_t curr_brk;
+
+// break point level 2
+static uint8_t* bptl2[256];
+
+#define BP_L2_IDX(x) (((x) >> 8) & 0xFF)
+#define BP_L1_IDX(x) (((x) & 0xFF))
+#define BP_PRESENT(x) ((x) & 0x1)
+#define BP_SET_PRESENT(x) ((x) | 0x1)
+#define BP_SET_NOT_PRESENT(x) ((x) & 0xFE)
+
+static int 
+insert_bp (uint16_t bp_addr)
+{
+	uint8_t bpt_idx = BP_L2_IDX(bp_addr);
+	uint8_t * bpt = NULL;
+	uint8_t bpte;
+
+	// no bpt yet
+	if (!bptl2[bpt_idx]) {
+		// allocate new bpt
+		bptl2[bpt_idx] = malloc(256);
+		memset(bptl2[bpt_idx], 0, 256);
+	}
+
+	bpt = bptl2[bpt_idx];
+	bpte = bpt[BP_L1_IDX(bp_addr)];
+
+	if (BP_PRESENT(bpte)) {
+		printf("Breakpoint [0x%04X] exists.\n", bp_addr);
+		return -1;
+	} else {
+		bpt[BP_L1_IDX(bp_addr)] = BP_SET_PRESENT(bpte);
+	}
+
+	return 0;
+}
+
+static void
+bp_list ()
+{
+	int i, j;
+	int c = 0;
+	printf("Breakpoint List:\n");
+	for (i = 0; i < 256; i++) {
+		if (bptl2[i]) {
+			uint8_t * bpt = bptl2[i];
+			for (j = 0; j < 256; j++) {
+				uint8_t bpte = bpt[j];
+				if (BP_PRESENT(bpte)) {
+					printf("  %d: [0x%04X]\n", c++, (uint16_t)((i << 8) | j));
+			
+				}
+			}
+		}
+	}
+					
+				
+}
+
+static int
+is_valid_bp (uint16_t bp_addr)
+{
+	uint8_t bpt_idx = BP_L2_IDX(bp_addr);
+	uint8_t * bpt = NULL;
+	uint8_t bpte;
+	
+	if (!bptl2[bpt_idx]) {
+		return 0;
+	}
+
+	bpt = bptl2[bpt_idx];
+	bpte = bpt[BP_L1_IDX(bp_addr)];
+	
+	return BP_PRESENT(bpte);
+}
+
+static int
+remove_bp (uint16_t bp_addr)
+{
+	uint8_t bpt_idx = BP_L2_IDX(bp_addr);
+	uint8_t * bpt = NULL;
+	uint8_t bpte;
+	
+	if (!bptl2[bpt_idx]) {
+		return -1;
+	}
+
+	bpt = bptl2[bpt_idx];
+	bpte = bpt[BP_L1_IDX(bp_addr)];
+
+	if (BP_PRESENT(bpte)) {
+		bpt[BP_L1_IDX(bp_addr)] = BP_SET_NOT_PRESENT(bpte);
+		return 0;
+	}
+
+	return -1;
+}
 
 static int
 cmd_help (mos6502_t * cpu, char * cmd)
@@ -19,7 +115,9 @@ cmd_help (mos6502_t * cpu, char * cmd)
 	printf("List of commands:\n\n");
 	printf("s or stepi -- Step one instruction\n");
 	printf("sn or stepn -- Step N instructions\n");
-	printf("b or break <addr> -- Set a breakpoint at <addr> (currently only one breakpoint supported)\n");
+	printf("b or break <addr> -- Set a breakpoint at <addr>\n");
+	printf("b or break rm <addr> -- Remove the breakpoint at <addr>\n");
+	printf("b or break list -- List all current breakpoints\n");
 	printf("c or continue -- Continue until exit or breakpoint is hit\n");
 	printf("j or jump <addr> -- Set PC to specified adddress (in hex) and continue\n");
 	printf("r or regs -- Dump the machine registers\n");
@@ -49,11 +147,12 @@ cmd_stepn (mos6502_t * cpu, char * cmd)
 	if (sscanf(cmd, "stepn %d", &n) == 1 ||
 	    sscanf(cmd, "sn %d", &n) == 1) {
 		
-		for (i = 0; i < n && cpu->pc != curr_brk; i++) {
+		for (i = 0; i < n && !is_valid_bp(cpu->pc); i++) {
 			mos6502_step(cpu);
 		}
-		if (cpu->pc == curr_brk) {
-			printf("Breakpoint [0x%04X] reached.\n", curr_brk);
+		if (is_valid_bp(cpu->pc)) {
+			printf("Breakpoint [0x%04X] reached.\n", cpu->pc);
+			remove_bp(cpu->pc);
 		}
 
 	} else {
@@ -174,14 +273,15 @@ cmd_print_instr (mos6502_t * cpu, char * cmd)
 static int
 cmd_cont (mos6502_t * cpu, char * cmd)
 {
-	while (cpu->pc != curr_brk) {
+	while (!is_valid_bp(cpu->pc)) {
 		if (mos6502_step(cpu) < 0) {
 			return -1;
 		}
 	}
 
-	if (cpu->pc == curr_brk) {
-		printf("Breakpoint [0x%04X] reached.\n", curr_brk);
+	if (is_valid_bp(cpu->pc)) {
+		printf("Breakpoint [0x%04X] reached.\n", cpu->pc);
+		remove_bp(cpu->pc);
 	}
 	
 	return 0;
@@ -194,9 +294,18 @@ cmd_brk (mos6502_t * cpu, char * cmd)
 
 	if (sscanf(cmd, "break %hx", &addr) == 1 ||
 	    sscanf(cmd, "b %hx", &addr) == 1) {
-		curr_brk = addr;
-		printf("Breakpoint set at [0x%04X]\n", addr);
-	} else {
+		if (insert_bp(addr) == 0) {
+			printf("Breakpoint set at [0x%04X]\n", addr);
+		}
+	} else if (sscanf(cmd, "break rm %hx", &addr) == 1 ||
+		   sscanf(cmd, "b rm %hx", &addr) == 1) {
+		if (remove_bp(addr) == 0) {
+			printf("Breakpoint [0x%04X] removed\n", addr);
+		}
+	} else if (strncmp(cmd, "break list", 10) == 0 ||
+		   strncmp(cmd, "b list", 6) == 0) {
+		bp_list();
+	} else {	
 		printf("Invalid command format.\n");
 		cmd_help(cpu, cmd);
 	}
