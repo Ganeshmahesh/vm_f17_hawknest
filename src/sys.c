@@ -82,6 +82,7 @@ sys_init (const char * rom_path,
 
 		/* initialize devices */
 		controller_init(s);
+		gfx_init(s);
 	}
 
 	/* initialize the paravirtual hooks */

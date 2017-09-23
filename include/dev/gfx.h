@@ -37,10 +37,15 @@ typedef enum cga_color {
 	COLOR_WHITE    = 15
 } cga_color_t;
 
+typedef struct gfx_state {
+	uint8_t fb[GFX_FB_SIZE];
+} gfx_state_t;
+
 typedef struct gfx_card {
+	gfx_state_t * state;
+	struct system * sys;
 } gfx_card_t;
 
-void gfx_reset(gfx_card_t * gfx);
 gfx_card_t * gfx_init(struct system * sys);
 
 #endif /* !__GFX_H__! */

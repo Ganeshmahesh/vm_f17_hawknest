@@ -2,7 +2,7 @@ CC := gcc
 LDFLAGS := 
 CFLAGS := -Wall -Wno-unused-function -Iinclude -I/usr/include/SDL2 -O2
 SRC := 
-LIBS := -lSDL2 -lSDL2_ttf -lm 
+LIBS := -lSDL2 -lSDL2_ttf -lm -lrt
 
 TARGET := hawknest
 
