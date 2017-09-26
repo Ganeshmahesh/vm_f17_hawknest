@@ -124,8 +124,7 @@ mos6502_init (system_t * sys)
 	memset(cpu, 0, sizeof(mos6502_t));
 	
 	cpu->sys = sys;
-	
-	// FILL ME IN
+	mos6502_reset(cpu);
 	
 	return cpu;
 }
@@ -140,7 +139,9 @@ mos6502_init (system_t * sys)
 void
 mos6502_reset (mos6502_t * cpu)
 {
-	// FILL ME IN
+	cpu->pc = 0xFFFC;
+	(cpu->p).val = 0;
+	cpu->intr_status = 0;
 }
 
 
