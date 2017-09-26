@@ -67,6 +67,8 @@ typedef struct decoder_info {
 	uint8_t instr_len;
 	uint16_t addr;
 	addr_mode_t mode;
+	uint8_t cycles;
+	char[4] current_instr
 	mos6502_t * cpu;
 } decode_info_t;
 
@@ -81,6 +83,5 @@ void mos6502_raise_nmi(mos6502_t * cpu);
 
 uint16_t read16(mos6502_t * cpu, uint16_t addr);
 uint8_t  pull(mos6502_t * cpu);
-void     push(mos6502_t * cpu, uint8_t val);
-
+void     push(mos6502_t * cpu, uint8_t val);                                                                                  
 #endif /* !__MOS6502_H__! */
