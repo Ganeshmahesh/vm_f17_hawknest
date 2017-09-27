@@ -53,14 +53,17 @@
 
 typedef decode_info_t* (*opcode_Map) (decode_info_t *);
 
+//BRK
 decode_info_t * v6502_00(decode_info_t *d)
 {
-  d->opcode =
-  d->page_crossed =
-  d->instr_len =
-  d->mode =
+  d->opcode = 0x00;
+  d->page_crossed = 0;
+  d->instr_len = 1;
+  d->mode = MODE_IMPL;
+  d->cycles = 7;
   return d;
 }
+/*
 decode_info_t * v6502_01(decode_info_t *d)
 {
   d->opcode =
@@ -2118,14 +2121,14 @@ decode_info_t* v6502_00 (decode_info_t *d)
 {
         return d;
 }
-
+*/
 decode_info_t* NOP (decode_info_t *d)
 {
         return d;
 }
 
 static const opcode_Map op_table[256]={
-v6502_00,
+v6502_00,/*
 v6502_01,
 NOP,
 NOP,
@@ -2380,7 +2383,7 @@ NOP,
 NOP,
 v6502_fd,
 v6502_fe,
-NOP,
+NOP,*/
 };  
 
 uint16_t 
