@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <base.h>
+#include <inttypes.h>
 #include <sys.h>
 #include <memctrl.h>
 #include <mos6502/cpu.h>
@@ -51,6 +52,7 @@
  *
  */
 
+int cycles = 0;
 typedef decode_info_t* (*opcode_Map) (decode_info_t *);
 
 //BRK
@@ -58,9 +60,8 @@ decode_info_t * v6502_00(decode_info_t *d)
 {
   d->opcode = 0x00;
   d->page_crossed = 0;
-  d->instr_len = 1;
   d->mode = MODE_IMPL;
-  d->cycles = 7;
+  cycles = 7;
   return d;
 }
 /*
@@ -2384,7 +2385,15 @@ NOP,
 v6502_fd,
 v6502_fe,
 NOP,*/
-};  
+}; 
+
+uint8_t
+readbyte (mos6502_t * cpu, uint16_t addr)
+{
+	DEBUG_PRINT("Handling memory read at address 0x%04x\n", addr);
+	uint8_t val = mem_read(cpu->sys, addr);
+	return val;
+} 
 
 uint16_t 
 read16 (mos6502_t * cpu, uint16_t addr)
@@ -2456,7 +2465,7 @@ mos6502_init (system_t * sys)
 		return NULL;
 	}
 	memset(cpu, 0, sizeof(mos6502_t));
-	
+	INFO_PRINT("Initializing CPU...\n");
 	cpu->sys = sys;
 	mos6502_reset(cpu);
 	
@@ -2473,6 +2482,7 @@ mos6502_init (system_t * sys)
 void
 mos6502_reset (mos6502_t * cpu)
 {
+	INFO_PRINT("Resetting CPU...\n");
 	cpu->pc = 0xFFFC;
 	(cpu->p).val = 0;
 	cpu->intr_status = 0;
@@ -2497,7 +2507,37 @@ mos6502_reset (mos6502_t * cpu)
 int
 mos6502_step (mos6502_t * cpu)
 {
-	// FILL ME IN
+	DEBUG_PRINT("Inside step routine\n");
+	//Handle interrupt
+	if(cpu->intr_status == INTR_IRQ)
+	{
+		//reset interrupt status
+		cpu->intr_status = INTR_NONE;
+		push16(cpu, cpu->pc);
+		push(cpu, (cpu->p).val);
+		//handle interrupt
+		cpu->pc = 0xFFFA;
+		cycles = 7;
+		
+	}
+	else if(cpu->intr_status == INTR_NMI)
+	{
+		cpu->intr_status = INTR_NONE;
+		push16(cpu, cpu->pc);
+		push(cpu, (cpu->p).val);
+		cpu->pc = 0xFFFE;
+		cycles = 7;
+	}
+	else
+	{
+		uint8_t opCode = readbyte(cpu, cpu->pc);
+		DEBUG_PRINT("Processing opcode: %" PRIu8 "\n", opCode);
+		decode_info_t *decode_info = (decode_info_t*)malloc(sizeof(decode_info_t));
+		op_table[opCode](decode_info);
+		
+		//Now execute the instruction
+		
+	}
 	return 0;
 }
 

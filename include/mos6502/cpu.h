@@ -67,8 +67,8 @@ typedef struct decoder_info {
 	uint8_t instr_len;
 	uint16_t addr;
 	addr_mode_t mode;
-	uint8_t cycles;
-	char[4] current_instr
+	//uint8_t cycles;
+	//char[4] current_instr
 	mos6502_t * cpu;
 } decode_info_t;
 
