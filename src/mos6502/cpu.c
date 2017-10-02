@@ -52,6 +52,7 @@
  *
  */
 
+#define page_crossed(addr, offset) ((((addr) & 0xFF) + offset) >= 0x100)
 int cycles = 0;
 typedef decode_info_t* (*opcode_Map) (decode_info_t *);
 
@@ -314,15 +315,16 @@ decode_info_t * v6502_1f(decode_info_t *d)
   d->instr_len =
   d->mode =
   return d;
-}
+}*/
 decode_info_t * v6502_20(decode_info_t *d)
 {
-  d->opcode =
-  d->page_crossed =
-  d->instr_len =
-  d->mode =
+  d->opcode = 0x20; 
+  d->page_crossed = 0;
+  d->instr_len = 3;
+  d->mode = MODE_ABS;
+  cycles = 6; 
   return d;
-}
+}/*
 decode_info_t * v6502_21(decode_info_t *d)
 {
   d->opcode =
@@ -1384,15 +1386,16 @@ decode_info_t * v6502_a4(decode_info_t *d)
   d->instr_len =
   d->mode =
   return d;
-}
+}*/
 decode_info_t * v6502_a5(decode_info_t *d)
 {
-  d->opcode =
-  d->page_crossed =
-  d->instr_len =
-  d->mode =
+  d->opcode = 0xA5;
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_ZEROP;
+  cycles = 3;
   return d;
-}
+}/*
 decode_info_t * v6502_a6(decode_info_t *d)
 {
   d->opcode =
@@ -1416,15 +1419,16 @@ decode_info_t * v6502_a8(decode_info_t *d)
   d->instr_len =
   d->mode =
   return d;
-}
+}*/
 decode_info_t * v6502_a9(decode_info_t *d)
 {
-  d->opcode =
-  d->page_crossed =
-  d->instr_len =
-  d->mode =
+  d->opcode = 0xA9;
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_IMM;
+  cycles = 2;
   return d;
-}
+}/*
 decode_info_t * v6502_aa(decode_info_t *d)
 {
   d->opcode =
@@ -1448,15 +1452,16 @@ decode_info_t * v6502_ac(decode_info_t *d)
   d->instr_len =
   d->mode =
   return d;
-}
+}*/
 decode_info_t * v6502_ad(decode_info_t *d)
 {
-  d->opcode =
-  d->page_crossed =
-  d->instr_len =
-  d->mode =
+  d->opcode = 0xAD;
+  d->page_crossed = 0;
+  d->instr_len = 3;
+  d->mode = MODE_ABS;
+  cycles = 4;
   return d;
-}
+}/*
 decode_info_t * v6502_ae(decode_info_t *d)
 {
   d->opcode =
@@ -1512,15 +1517,16 @@ decode_info_t * v6502_b4(decode_info_t *d)
   d->instr_len =
   d->mode =
   return d;
-}
+}*/
 decode_info_t * v6502_b5(decode_info_t *d)
 {
-  d->opcode =
-  d->page_crossed =
-  d->instr_len =
-  d->mode =
+  d->opcode = 0xB5;
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_ZEROPX;
+  cycles = 4;
   return d;
-}
+}/*
 decode_info_t * v6502_b6(decode_info_t *d)
 {
   d->opcode =
@@ -2128,6 +2134,10 @@ decode_info_t* NOP (decode_info_t *d)
         return d;
 }
 
+static const int cycle_table[256]={
+7,6,0,0,0,3,5,0,3,2,2,0,0,4,6,0,2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,6,6,0,0,3,3,5,0,4,2,2,0,4,4,6,0,2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,6,6,0,0,0,3,5,0,3,2,2,0,3,4,6,0,2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,6,6,0,0,0,3,5,0,4,2,2,0,5,4,6,0,2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,0,6,0,0,3,3,3,0,2,0,2,0,4,4,4,0,2,6,0,0,4,4,4,0,2,5,2,0,0,5,0,0,2,6,2,0,3,3,3,0,2,2,2,0,4,4,4,0,0,4,4,4,0,2,4,2,0,4,4,4,0,2,6,0,0,3,3,5,0,2,2,2,0,4,4,6,0,2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,2,6,0,0,3,3,5,0,2,2,2,0,4,4,6,0,2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0
+};
+
 static const opcode_Map op_table[256]={
 v6502_00,/*
 v6502_01,
@@ -2160,8 +2170,8 @@ NOP,
 NOP,
 v6502_1d,
 v6502_1e,
-NOP,
-v6502_20,
+NOP,*/
+v6502_20,/*
 v6502_21,
 NOP,
 NOP,
