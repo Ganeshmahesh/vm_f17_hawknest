@@ -2144,7 +2144,7 @@ void
 mos6502_reset (mos6502_t * cpu)
 {
 	INFO_PRINT("Resetting CPU...\n");
-	cpu->pc = 0xFFFC;
+	cpu->pc = read16(cpu, 0xFFFC);
 	(cpu->p).val = 0;
 	cpu->intr_status = 0;
 }
@@ -2177,7 +2177,7 @@ mos6502_step (mos6502_t * cpu)
 		push16(cpu, cpu->pc);
 		push(cpu, (cpu->p).val);
 		//handle interrupt
-		cpu->pc = 0xFFFA;
+		cpu->pc = read16(cpu, 0xFFFA);
 		cycles = 7;
 		
 	}
@@ -2186,7 +2186,7 @@ mos6502_step (mos6502_t * cpu)
 		cpu->intr_status = INTR_NONE;
 		push16(cpu, cpu->pc);
 		push(cpu, (cpu->p).val);
-		cpu->pc = 0xFFFE;
+		cpu->pc = read16(cpu, 0xFFFE);
 		cycles = 7;
 	}
 	else
