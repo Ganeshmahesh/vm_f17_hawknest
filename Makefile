@@ -1,4 +1,4 @@
-CC := gcc
+CC := gcc -g
 LDFLAGS := 
 CFLAGS := -Wall -Wno-unused-function -Iinclude -I/usr/include/SDL2 -O2
 SRC := 
