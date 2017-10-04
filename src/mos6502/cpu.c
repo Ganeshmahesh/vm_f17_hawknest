@@ -690,7 +690,7 @@ decode_info_t * v6502_51(decode_info_t *d)
   d->opcode = 0x51;
   d->page_crossed = 1;
   d->instr_len = 2;
-  d->mode = MODE_INDIDY;
+  d->mode = MODE_IND;
   cycles = 5;
   return d;
 }
@@ -1622,7 +1622,7 @@ decode_info_t * v6502_d1(decode_info_t *d)
   d->opcode = 0xD1;
   d->page_crossed = 1;
   d->instr_len = 2;
-  d->mode = MODE_INDIDY;
+  d->mode = MODE_IND;
   cycles = 5;
   return d;
 }
