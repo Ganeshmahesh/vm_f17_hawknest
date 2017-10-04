@@ -54,14 +54,20 @@
 
 #define page_crossed(addr, offset) ((((addr) & 0xFF) + offset) >= 0x100)
 int cycles = 0;
+char current_instr[4] = { '\0', '\0', '\0', '\0'}; 
 typedef decode_info_t* (*opcode_Map) (decode_info_t *);
 
 decode_info_t * v6502_00(decode_info_t *d)
 {
   d->opcode = 0x00;
   d->page_crossed = 0;
+  d->instr_len = 1;
   d->mode = MODE_IMPL;
   cycles = 7;
+  current_instr[0] = 'B';
+  current_instr[1] = 'R';
+  current_instr[2] = 'K';
+  current_instr[3] = '\0';
   return d;
 }
 decode_info_t * v6502_01(decode_info_t *d)
@@ -99,6 +105,11 @@ decode_info_t * v6502_05(decode_info_t *d)
 }
 decode_info_t * v6502_06(decode_info_t *d)
 {
+  d->opcode = 0x06;
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_ZEROP;
+  cycles = 5;
   return d;
 }
 decode_info_t * v6502_07(decode_info_t *d)
@@ -126,7 +137,11 @@ decode_info_t * v6502_09(decode_info_t *d)
 }
 decode_info_t * v6502_0a(decode_info_t *d)
 {
-
+  d->opcode = 0x0A;
+  d->page_crossed = 0;
+  d->instr_len = 1;
+  d->mode = MODE_ACC;
+  cycles = 2;
   return d;
 }
 decode_info_t * v6502_0b(decode_info_t *d)
@@ -150,7 +165,11 @@ decode_info_t * v6502_0d(decode_info_t *d)
 }
 decode_info_t * v6502_0e(decode_info_t *d)
 {
-
+  d->opcode = 0x0E;
+  d->page_crossed = 0;
+  d->instr_len = 3;
+  d->mode = MODE_ABS;
+  cycles = 6;
   return d;
 }
 decode_info_t * v6502_0f(decode_info_t *d)
@@ -158,9 +177,18 @@ decode_info_t * v6502_0f(decode_info_t *d)
 
   return d;
 }
+//TODO:+1 branch succeeds and +2 new page
 decode_info_t * v6502_10(decode_info_t *d)
 {
-
+  d->opcode = 0x10;
+  d->page_crossed = 2;
+  d->instr_len = 2;
+  d->mode = MODE_REL;
+  cycles = 2;
+  current_instr[0] = 'B';
+  current_instr[1] = 'P';
+  current_instr[2] = 'L';
+  current_instr[3] = '\0';
   return d;
 }
 decode_info_t * v6502_11(decode_info_t *d)
@@ -200,7 +228,11 @@ decode_info_t * v6502_15(decode_info_t *d)
 }
 decode_info_t * v6502_16(decode_info_t *d)
 {
-
+  d->opcode = 0x16;
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_ZEROPX;
+  cycles = 6;
   return d;
 }
 decode_info_t * v6502_17(decode_info_t *d)
@@ -210,7 +242,15 @@ decode_info_t * v6502_17(decode_info_t *d)
 }
 decode_info_t * v6502_18(decode_info_t *d)
 {
-
+  d->opcode = 0x18;
+  d->page_crossed = 0;
+  d->instr_len = 1;
+  d->mode = MODE_IMPL;
+  cycles = 2;
+  current_instr[0] = 'C';
+  current_instr[1] = 'L';
+  current_instr[2] = 'C';
+  current_instr[3] = '\0';
   return d;
 }
 decode_info_t * v6502_19(decode_info_t *d)
@@ -248,7 +288,11 @@ decode_info_t * v6502_1d(decode_info_t *d)
 }
 decode_info_t * v6502_1e(decode_info_t *d)
 {
-
+  d->opcode = 0x1E;
+  d->page_crossed = 0;
+  d->instr_len = 3;
+  d->mode = MODE_ABSX;
+  cycles = 7;
   return d;
 }
 decode_info_t * v6502_1f(decode_info_t *d)
@@ -268,6 +312,11 @@ decode_info_t * v6502_20(decode_info_t *d)
 decode_info_t * v6502_21(decode_info_t *d)
 {
 
+  d->opcode = 0x21; 
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_INDIDX;
+  cycles = 6; 
   return d;
 }
 decode_info_t * v6502_22(decode_info_t *d)
@@ -282,12 +331,24 @@ decode_info_t * v6502_23(decode_info_t *d)
 }
 decode_info_t * v6502_24(decode_info_t *d)
 {
-
+  d->opcode = 0x24;
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_ZEROP;
+  cycles = 3;
+  current_instr[0] = 'B';
+  current_instr[1] = 'I';
+  current_instr[2] = 'T';
+  current_instr[3] = '\0';
   return d;
 }
 decode_info_t * v6502_25(decode_info_t *d)
 {
-
+  d->opcode = 0x25;
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_ZEROP;
+  cycles = 3;
   return d;
 }
 decode_info_t * v6502_26(decode_info_t *d)
@@ -315,7 +376,11 @@ decode_info_t * v6502_28(decode_info_t *d)
 }
 decode_info_t * v6502_29(decode_info_t *d)
 {
-
+  d->opcode = 0x29;
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_IMM;
+  cycles = 2;
   return d;
 }
 decode_info_t * v6502_2a(decode_info_t *d)
@@ -336,12 +401,24 @@ decode_info_t * v6502_2b(decode_info_t *d)
 
 decode_info_t * v6502_2c(decode_info_t *d)
 {
-
+  d->opcode = 0x2C;
+  d->page_crossed = 0;
+  d->instr_len =3;
+  d->mode = MODE_ABS;
+  cycles = 4;
+  current_instr[0] = 'B';
+  current_instr[1] = 'I';
+  current_instr[2] = 'T';
+  current_instr[3] = '\0';
   return d;
 }
 decode_info_t * v6502_2d(decode_info_t *d)
 {
-
+  d->opcode = 0x2D;
+  d->page_crossed = 0;
+  d->instr_len = 3;
+  d->mode = MODE_ABS;
+  cycles = 4;
   return d;
 }
 decode_info_t * v6502_2e(decode_info_t *d)
@@ -358,14 +435,27 @@ decode_info_t * v6502_2f(decode_info_t *d)
 
   return d;
 }
+//TODO:+1 branch succeeds +2 new page
 decode_info_t * v6502_30(decode_info_t *d)
 {
-
+  d->opcode = 0x30;
+  d->page_crossed = 2;
+  d->instr_len = 2;
+  d->mode = MODE_REL;
+  cycles = 2;
+  current_instr[0] = 'B';
+  current_instr[1] = 'M';
+  current_instr[2] = 'I';
+  current_instr[3] = '\0';
   return d;
 }
 decode_info_t * v6502_31(decode_info_t *d)
 {
-
+  d->opcode = 0x31;
+  d->page_crossed = 1;
+  d->instr_len = 2;
+  d->mode = MODE_IND;
+  cycles = 5;
   return d;
 }
 decode_info_t * v6502_32(decode_info_t *d)
@@ -385,7 +475,11 @@ decode_info_t * v6502_34(decode_info_t *d)
 }
 decode_info_t * v6502_35(decode_info_t *d)
 {
-
+  d->opcode = 0x35;
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_ZEROPX;
+  cycles = 4;
   return d;
 }
 decode_info_t * v6502_36(decode_info_t *d)
@@ -413,7 +507,11 @@ d->opcode = 0x38;
 }
 decode_info_t * v6502_39(decode_info_t *d)
 {
-
+  d->opcode = 0x39;
+  d->page_crossed = 1;
+  d->instr_len = 3;
+  d->mode = MODE_ABSY;
+  cycles = 4;
   return d;
 }
 decode_info_t * v6502_3a(decode_info_t *d)
@@ -433,7 +531,11 @@ decode_info_t * v6502_3c(decode_info_t *d)
 }
 decode_info_t * v6502_3d(decode_info_t *d)
 {
-
+  d->opcode = 0x3D;
+  d->page_crossed = 1;
+  d->instr_len = 3;
+  d->mode = MODE_ABSX;
+  cycles = 4;
   return d;
 }
 decode_info_t * v6502_3e(decode_info_t *d)
@@ -548,9 +650,18 @@ decode_info_t * v6502_4f(decode_info_t *d)
 
   return d;
 }
+//TODO: +1 branch succeeds +2 new page
 decode_info_t * v6502_50(decode_info_t *d)
 {
- 
+  d->opcode = 0x50;
+  d->page_crossed = 2;
+  d->instr_len = 2;
+  d->mode = MODE_REL;
+  cycles = 2;
+  current_instr[0] = 'B';
+  current_instr[1] = 'V';
+  current_instr[2] = 'C';
+  current_instr[3] = '\0';
   return d;
 }
 decode_info_t * v6502_51(decode_info_t *d)
@@ -646,7 +757,11 @@ d->opcode = 0x60;
 }
 decode_info_t * v6502_61(decode_info_t *d)
 {
-
+  d->opcode = 0x61;
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_INDIDX;
+  cycles = 6;
   return d;
 }
 decode_info_t * v6502_62(decode_info_t *d)
@@ -666,7 +781,11 @@ decode_info_t * v6502_64(decode_info_t *d)
 }
 decode_info_t * v6502_65(decode_info_t *d)
 {
- 
+  d->opcode = 0x65;
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_ZEROP;
+  cycles = 3;
   return d;
 }
 decode_info_t * v6502_66(decode_info_t *d)
@@ -680,7 +799,13 @@ decode_info_t * v6502_66(decode_info_t *d)
 }
 decode_info_t * v6502_67(decode_info_t *d)
 {
+  d->opcode = 0x65;
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_ZEROP;
+  cycles = 3;
   return d;
+
 }
 decode_info_t * v6502_68(decode_info_t *d)
 {
@@ -693,6 +818,11 @@ decode_info_t * v6502_68(decode_info_t *d)
 }
 decode_info_t * v6502_69(decode_info_t *d)
 {
+  d->opcode = 0x69;
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_IMM;
+  cycles = 2;
   return d;
 }
 decode_info_t * v6502_6a(decode_info_t *d)
@@ -714,6 +844,11 @@ decode_info_t * v6502_6c(decode_info_t *d)
 }
 decode_info_t * v6502_6d(decode_info_t *d)
 {
+  d->opcode = 0x6D;
+  d->page_crossed = 0;
+  d->instr_len = 3;
+  d->mode = MODE_ABS;
+  cycles = 4;
   return d;
 }
 decode_info_t * v6502_6e(decode_info_t *d)
@@ -729,13 +864,28 @@ decode_info_t * v6502_6f(decode_info_t *d)
 {
   return d;
 }
+//TODO:+1 branch succeeds +2 new page
 decode_info_t * v6502_70(decode_info_t *d)
 {
+  d->opcode = 0x70;
+  d->page_crossed = 2;
+  d->instr_len = 2;
+  d->mode = MODE_REL;
+  current_instr[0] = 'B';
+  current_instr[0] = 'V';
+  current_instr[0] = 'S';
+  current_instr[0] = '\0';
+  cycles = 2;
   return d;
 }
 decode_info_t * v6502_71(decode_info_t *d)
 {
- return d;
+  d->opcode = 0x71;
+  d->page_crossed = 1;
+  d->instr_len = 2;
+  d->mode = MODE_IND;
+  cycles = 5;
+  return d;
 }
 decode_info_t * v6502_72(decode_info_t *d)
 {
@@ -751,6 +901,11 @@ decode_info_t * v6502_74(decode_info_t *d)
 }
 decode_info_t * v6502_75(decode_info_t *d)
 {
+  d->opcode = 0x75;
+  d->page_crossed = 0;
+  d->instr_len = 2;
+  d->mode = MODE_ZEROPX;
+  cycles = 4;
   return d;
 }
 decode_info_t * v6502_76(decode_info_t *d)
@@ -777,6 +932,11 @@ decode_info_t * v6502_78(decode_info_t *d)
 }
 decode_info_t * v6502_79(decode_info_t *d)
 {
+  d->opcode = 0x79;
+  d->page_crossed = 1;
+  d->instr_len = 3;
+  d->mode = MODE_ABSY;
+  cycles = 3;
   return d;
 }
 decode_info_t * v6502_7a(decode_info_t *d)
@@ -793,6 +953,11 @@ decode_info_t * v6502_7c(decode_info_t *d)
 }
 decode_info_t * v6502_7d(decode_info_t *d)
 {
+  d->opcode = 0x7D;
+  d->page_crossed = 1;
+  d->instr_len = 3;
+  d->mode = MODE_ABSX;
+  cycles = 4;
   return d;
 }
 decode_info_t * v6502_7e(decode_info_t *d)
@@ -912,9 +1077,15 @@ decode_info_t * v6502_8f(decode_info_t *d)
 {
 return d;
 }
+//TODO:need to represent page crossed with a value +1 if branch succeeds else +2 if new page
 decode_info_t * v6502_90(decode_info_t *d)
 {
-return d;
+  d->opcode = 0x90;
+  d->page_crossed = 1;
+  d->instr_len = 2;
+  d->mode = MODE_REL;
+  cycles = 2;
+  return d;
 }
 decode_info_t * v6502_91(decode_info_t *d)
 {
@@ -1141,9 +1312,15 @@ decode_info_t * v6502_af(decode_info_t *d)
 {
 return d;
 }
+//TODO: change page crossed +1 for branch succeeds else +2 for new page
 decode_info_t * v6502_b0(decode_info_t *d)
 {
-return d;
+  d->opcode = 0xB0;
+  d->page_crossed = 2;
+  d->instr_len = 2;
+  d->mode = MODE_REL;
+  cycles = 2;
+  return d;
 }
 decode_info_t * v6502_b1(decode_info_t *d)
 {
@@ -1314,9 +1491,19 @@ decode_info_t * v6502_cf(decode_info_t *d)
 {
 return d;
 }
+//TODO:+1 branch succeds +2 new page
 decode_info_t * v6502_d0(decode_info_t *d)
 {
-return d;
+  d->opcode = 0xD0;
+  d->page_crossed = 2;
+  d->instr_len = 2;
+  d->mode = MODE_REL;
+  cycles = 2;
+  current_instr[0] = 'B';
+  current_instr[1] = 'N';
+  current_instr[2] = 'E';
+  current_instr[3] = '\0'; 
+  return d;
 }
 decode_info_t * v6502_d1(decode_info_t *d)
 {
@@ -1389,7 +1576,7 @@ decode_info_t * v6502_e0(decode_info_t *d)
 }
 decode_info_t * v6502_e1(decode_info_t *d)
 {
-d->opcode = 0xE1;
+  d->opcode = 0xE1;
   d->page_crossed = 0;
   d->instr_len = 2;
   d->mode = MODE_INDIDX;
@@ -1483,9 +1670,18 @@ decode_info_t * v6502_ef(decode_info_t *d)
 
   return d;
 }
+//TODO:+1 branch succeeds else +2 for new page
 decode_info_t * v6502_f0(decode_info_t *d)
 {
-
+  d->opcode = 0xF0;
+  d->page_crossed = 2;
+  d->instr_len = 2;
+  d->mode = MODE_REL;
+  cycles = 2;
+  current_instr[0] = 'B';
+  current_instr[1] = 'E';
+  current_instr[2] = 'Q';
+  current_instr[3] = '\0';
   return d;
 }
 decode_info_t * v6502_f1(decode_info_t *d)
