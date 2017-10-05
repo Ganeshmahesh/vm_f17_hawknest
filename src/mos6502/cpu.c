@@ -1785,10 +1785,6 @@ decode_info_t* NOP (decode_info_t *d)
         return d;
 }
 
-static const int cycle_table[256]={
-7,6,0,0,0,3,5,0,3,2,2,0,0,4,6,0,2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,6,6,0,0,3,3,5,0,4,2,2,0,4,4,6,0,2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,6,6,0,0,0,3,5,0,3,2,2,0,3,4,6,0,2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,6,6,0,0,0,3,5,0,4,2,2,0,5,4,6,0,2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,0,6,0,0,3,3,3,0,2,0,2,0,4,4,4,0,2,6,0,0,4,4,4,0,2,5,2,0,0,5,0,0,2,6,2,0,3,3,3,0,2,2,2,0,4,4,4,0,0,4,4,4,0,2,4,2,0,4,4,4,0,2,6,0,0,3,3,5,0,2,2,2,0,4,4,6,0,2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,2,6,0,0,3,3,5,0,2,2,2,0,4,4,6,0,2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0
-};
-
 static const opcode_Map op_table[256]={
 v6502_00,
 v6502_01,
@@ -2111,6 +2107,117 @@ pull16 (mos6502_t * cpu)
 	return (hi << 8) | lo;
 }
 
+uint8_t
+resolve_addr(mos6502_t *cpu, decode_info_t *d_info)
+{
+	uint16_t mem_low = 0;
+	uint16_t mem_high = 0;
+	uint8_t value = 0;
+	uint8_t pc_update_value = 0;
+	uint16_t mem = 0;
+
+	switch(d_info->mode)
+	{
+
+        	case MODE_ABS:
+			mem = read16(cpu, cpu->pc); //fetching the address
+			value = readbyte(cpu, mem); //fetching value at address
+			pc_update_value = 16;
+			break;
+
+		case MODE_ABSX:
+			mem = read16(cpu, cpu->pc);
+			pc_update_value = 16;
+			mem += cpu->x;
+			value = readbyte(cpu, mem);
+			break;
+
+		case MODE_ABSY:
+			mem = read16(cpu, cpu->pc);
+			pc_update_value = 16;
+			mem += cpu->y;
+			value = readbyte(cpu, mem);
+			break;
+
+		case MODE_ACC:
+			value = cpu->a;
+			break;
+
+		case MODE_IMM:
+			value = readbyte(cpu, cpu->pc);
+			pc_update_value = 8;
+			break;
+
+		case MODE_IMPL:
+			break;
+
+		case MODE_IDXIND:
+			mem_low = readbyte(cpu, cpu->pc);
+			pc_update_value = 8;
+			mem_high = 0;
+			mem = mem_low | (mem_high << 8);
+			mem += cpu->x;
+			value = readbyte(cpu, mem);
+			break;
+
+		case MODE_IND:
+			//JMP execution code so skipping for now
+			/*
+			mem = read16(cpu, cpu->pc);
+			pc_update_value = 16;
+			cpu->pc = read16(cpu, mem);
+			*/
+			break;
+
+		case MODE_INDIDX:
+			mem_low = readbyte(cpu, cpu->pc);
+			mem_high = 0;
+			pc_update_value = 8;
+			mem = mem_low | (mem_high << 8);
+			value = read16(cpu, mem);
+			value += cpu->y;
+			break;
+
+		case MODE_REL:
+			value = readbyte(cpu,cpu->pc);
+			pc_update_value = 8;
+			break;
+
+		case MODE_ZEROP:
+			mem_low = readbyte(cpu, cpu->pc);
+			pc_update_value = 8;
+			mem_high = 0;
+			mem = mem_low | (mem_high << 8);
+			value = readbyte(cpu, mem);
+			break;
+
+		case MODE_ZEROPX:
+			mem_low = readbyte(cpu, cpu->pc);
+			pc_update_value = 8;
+			mem_high = 0;
+			mem = mem_low | (mem_high << 8);
+			mem += cpu->x;
+			value = readbyte(cpu, mem);
+			break;
+			
+		case MODE_ZEROPY:
+			mem_low = readbyte(cpu, cpu->pc);
+			pc_update_value = 8;
+			mem_high = 0;
+			mem = mem_low | (mem_high << 8);
+			mem += cpu->y;
+			value = readbyte(cpu, mem);
+			break;
+		case MODE_NONE:
+		break;
+
+	}
+	cpu->pc += pc_update_value;
+	return value;
+}
+
+
+
 /* 
  * KCH: Here the CPU is created and it is set to its reset state (by calling your 
  * mos6502_reset() routine). I've only allocated the structure for you to 
@@ -2192,9 +2299,11 @@ mos6502_step (mos6502_t * cpu)
 	else
 	{
 		uint8_t opCode = readbyte(cpu, cpu->pc);
+		cpu->pc += 8;
 		DEBUG_PRINT("Processing opcode: %" PRIu8 "\n", opCode);
 		decode_info_t *decode_info = (decode_info_t*)malloc(sizeof(decode_info_t));
 		op_table[opCode](decode_info);
+		resolve_addr(cpu, decode_info);
 		
 		//Now execute the instruction
 		
